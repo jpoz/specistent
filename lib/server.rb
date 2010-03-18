@@ -33,6 +33,16 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
       ls.errback do |error|
         send_data(error)
       end
+    when /exec\s(.*)/
+      puts $1
+      @directory = $1
+      @g = Git.open($1)
+      send_data("Directory set to #{$1}\r\n")
+      return send_data('Set a directory: setdir /path/to/git_repo') unless @directory
+      ls = EventMachine::DeferrableChildProcess.open("ruby -e' $stdout.sync = true; puts `cd #{@directory} && rake spec` '")
+      ls.callback do |result|
+        send_data(result)
+      end
     else
       send_data("unknown command #{cmd.inspect}\r\n")
     end
@@ -40,7 +50,8 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
 
   def receive_data(data)
     @databuf << data
-    if (/(.*)\;\r\n$/ =~ @databuf.to_s)
+    puts data
+    if (/(.*)\;/ =~ @databuf.to_s)
       command($1)
       reset_databuf()
     end
