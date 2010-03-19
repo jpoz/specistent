@@ -3,6 +3,19 @@ require 'eventmachine'
 require 'logger'
 require 'git'
 
+module SpecProcess
+  
+  def initialize(socket)
+    @socket = socket
+  end
+  
+  def receive_data(data)
+    puts "sent #{data}"
+    @socket.send_data(data)
+  end
+  
+end
+
 class SpecistentServer < EM::Protocols::LineAndTextProtocol
   include EM::Protocols::LineText2
   
@@ -24,15 +37,8 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
     when /fetch (.*)/
       @g.remote($1).fetch
       send_data("Pulled from #{$1}\r\n")
-    when /run\s?(.*)/
-      return send_data('Set a directory: setdir /path/to/git_repo') unless @directory
-      ls = EventMachine::DeferrableChildProcess.open("ruby -e' $stdout.sync = true; puts `cd #{@directory} && rake spec #{$1}` '")
-      ls.callback do |result|
-        send_data(result)
-      end
-      ls.errback do |error|
-        send_data(error)
-      end
+    when /run\s?(.*)/      
+      EM.popen("/bin/sh -c 'spec #{$1}'", SpecProcess, self)
     when /exec\s(.*)/
       puts $1
       @directory = $1
