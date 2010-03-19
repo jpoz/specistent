@@ -1,7 +1,9 @@
-require 'lib/server'
-require 'lib/client'
+$:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
-arg = "Specistent" + (ARGV[0].capitalize || "Server")
+require 'specistent_server'
+require 'specistent_client'
+
+arg = "Specistent" + (ARGV[0]|| "Server").capitalize 
 klass = Kernel.const_get( arg )
 port = ARGV[1] || 8081
 
