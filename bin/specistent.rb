@@ -7,6 +7,8 @@ arg = "Specistent" + (ARGV[0]|| "Server").capitalize
 klass = Kernel.const_get( arg )
 port = ARGV[1] || 8081
 
+RENV = ARGV[2] || 'test'
+
 servers = [['localhost',8081,[]],['localhost',8082,[]],['localhost',8083,[]]]
 
 if (SpecistentServer == klass) 

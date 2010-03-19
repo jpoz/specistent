@@ -38,7 +38,7 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
       @g.remote($1).fetch
       send_data("Pulled from #{$1}\r\n")
     when /run\s?(.*)/      
-      EM.popen("/bin/sh -c 'spec #{$1}'", SpecProcess, self)
+      EM.popen("/bin/sh -c 'RAILS_ENV=#{RENV} spec #{$1}'", SpecProcess, self)
     when /exec\s(.*)/
       puts $1
       @directory = $1
