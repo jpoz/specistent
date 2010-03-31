@@ -14,8 +14,8 @@ options = {
 OptionParser.new do |opts|
   opts.banner = "Usage: specistent [options]"
 
-  opts.on("-h","--host HOST", "Host to run server on") do |v|
-    options[:klass] = SpecistentServer 
+  opts.on("-h","--host HOST", "Host to run server on") do |h|
+    options[:host] = h 
   end
 
   opts.on("-s","--server", "Run as Server") do |v|
@@ -39,8 +39,6 @@ OptionParser.new do |opts|
   end
 
 end.parse!
-
-puts options.inspect
 
 servers = [['localhost',8081,[]],['localhost',8082,[]]]
 
