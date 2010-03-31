@@ -6,12 +6,17 @@ require 'optparse'
 
 options = {
   :klass => SpecistentClient,
+  :host => '127.0.0.1',
   :port => 8081,
   :env => 'test',
   :remote => 'origin'
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: specistent [options]"
+
+  opts.on("-h","--host HOST", "Host to run server on") do |v|
+    options[:klass] = SpecistentServer 
+  end
 
   opts.on("-s","--server", "Run as Server") do |v|
     options[:klass] = SpecistentServer 
@@ -29,8 +34,8 @@ OptionParser.new do |opts|
     options[:branch] = b
   end
   
-  opts.on("-r","--remote REMOTE", "git remote to pull from (default origin)") do |b|
-    options[:remote] = b
+  opts.on("-r","--remote REMOTE", "git remote to pull from (default origin)") do |r|
+    options[:remote] = r
   end
 
 end.parse!
@@ -44,7 +49,7 @@ if (SpecistentServer == options[:klass])
   RENV = options[:env]
   EventMachine::run {
     puts "Started server on port #{options[:port]}"
-    EventMachine::start_server "127.0.0.1", options[:port], SpecistentServer
+    EventMachine::start_server options[:host], options[:port], SpecistentServer
   }
 else
   options[:branch] ||= Git.open(Dir.pwd).branch.name

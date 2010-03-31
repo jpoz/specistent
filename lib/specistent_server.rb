@@ -27,30 +27,10 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
   
   def command(cmd)
     case cmd
-    when "remotes"
-      remotes = @g ? %Q{remotes:\r\n#{@g.remotes.map{ |r| "  " + r.name + " -> " + r.url }.join("\r\n")}} : "No git repo set use setdir\r\n"
-      send_data(remotes)
-    when /setdir (.*)/
-      @directory = $1
-      @g = Git.open($1)
-      send_data("Directory set to #{$1}\r\n")
-    when /fetch (.*)/
-      @g.remote($1).fetch
-      send_data("Pulled from #{$1}\r\n")
     when /run\s(\w*)\/(\w*)\s(.*)/
       @g = Git.open(Dir.pwd)
       puts @g.pull($1, "#{$1}/#{$2}", "#{$1} pull")
       EM.popen("/bin/sh -c 'RAILS_ENV=#{RENV} spec #{$3}'", SpecProcess, self)
-    when /exec\s(.*)/
-      puts $1
-      @directory = $1
-      @g = Git.open($1)
-      send_data("Directory set to #{$1}\r\n")
-      return send_data('Set a directory: setdir /path/to/git_repo') unless @directory
-      ls = EventMachine::DeferrableChildProcess.open("ruby -e' $stdout.sync = true; puts `cd #{@directory} && rake spec` '")
-      ls.callback do |result|
-        send_data(result)
-      end
     else
       send_data("unknown command #{cmd.inspect}\r\n")
     end
