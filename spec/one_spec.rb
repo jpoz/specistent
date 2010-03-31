@@ -23,3 +23,9 @@ describe String do
   end
   
 end
+
+# "run origin_stuff/master_butter123 /spec/models/accounts_spec.rb /spec/models/accounts_spec.rb /spec/models/accounts_spec.rb" =~ /run\s(\w*)\/(\w*)\s(.*)/
+# 
+# puts $1
+# puts $2
+# puts $3

@@ -37,8 +37,10 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
     when /fetch (.*)/
       @g.remote($1).fetch
       send_data("Pulled from #{$1}\r\n")
-    when /run\s?(.*)/      
-      EM.popen("/bin/sh -c 'RAILS_ENV=#{RENV} spec #{$1}'", SpecProcess, self)
+    when /run\s(\w*)\/(\w*)\s(.*)/
+      @g = Git.open(Dir.pwd)
+      puts @g.pull($1, "#{$1}/#{$2}", "#{$1} pull")
+      EM.popen("/bin/sh -c 'RAILS_ENV=#{RENV} spec #{$3}'", SpecProcess, self)
     when /exec\s(.*)/
       puts $1
       @directory = $1
