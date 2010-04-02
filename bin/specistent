@@ -1,16 +1,25 @@
-$:.unshift File.join(File.dirname(__FILE__),'..','lib')
+#!/usr/bin/env ruby
 
-require 'specistent_server'
-require 'specistent_client'
+# require 'specistent'
+
+# development
+$:.unshift File.join(File.dirname(__FILE__),'..','lib')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'specistent')
+
 require 'optparse'
+require 'yaml'
 
 options = {
   :klass => SpecistentClient,
   :host => '127.0.0.1',
   :port => 8081,
   :env => 'test',
-  :remote => 'origin'
+  :remote => 'origin', 
+  :yml => 'specistent.yml',
+  :workers => 1,
+  :migrate => true
 }
+
 OptionParser.new do |opts|
   opts.banner = "Usage: specistent [options]"
 
@@ -26,31 +35,41 @@ OptionParser.new do |opts|
     options[:port] = p.to_i
   end
   
-  opts.on("-e","--env ENV", "Environment") do |e|
-    options[:env] = e
+  opts.on('-w', '--workers [WORKERS]', Numeric, "workers (defaults to 1)") do |w|
+    options[:workers] = w 
   end
   
   opts.on("-b","--branch BRANCH", "git branch to pull from (defaults to current branch)") do |b|
     options[:branch] = b
   end
   
+  opts.on("-m","--no-migrate", "do not migrate the database") do |m|
+    options[:migrate] = false
+  end
+  
   opts.on("-r","--remote REMOTE", "git remote to pull from (default origin)") do |r|
     options[:remote] = r
+  end
+  
+  opts.on("-y","--yml YML", "yaml file of servers (default specistent.yml)") do |y|
+    options[:yml] = y
   end
 
 end.parse!
 
-servers = [['localhost',8081,[]],['localhost',8082,[]]]
-
 if (SpecistentServer == options[:klass])
   g = Git.open(Dir.pwd)
-  RENV = options[:env]
   EventMachine::run {
-    puts "Started server on port #{options[:port]}"
-    EventMachine::start_server options[:host], options[:port], SpecistentServer
+    puts "Started server on #{options[:host]}:#{options[:port]} with #{options[:workers]} workers"
+    EventMachine::start_server( options[:host], options[:port], SpecistentServer ) { |s| 
+      s.workers = options[:workers]
+      s.migrate = options[:migrate]
+    }
   }
 else
+  servers = YAML::load(File.read(options[:yml])).map { |s| s.split(":") << [] }
   options[:branch] ||= Git.open(Dir.pwd).branch.name
+  @connections = []
   EM.run {
     queue = EM::Queue.new
     processor = proc{ |connection_array| 
@@ -59,7 +78,9 @@ else
         c.branch = options[:branch]
         c.remote = options[:remote]
         c.start_spec
+        @connections << c
       }
+      
       queue.pop(&processor)
     }
     queue.pop(&processor)
@@ -68,6 +89,10 @@ else
     files.each_with_index do |f, i|
       server_index = (i % servers.size)
       servers[server_index][2] << f
+    end
+    
+    EventMachine::PeriodicTimer.new(5) do
+      EM.stop if @connections.all? { |c| !c.connected }
     end
     
     servers.each do |s|

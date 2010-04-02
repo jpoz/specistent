@@ -3,9 +3,14 @@ require 'eventmachine'
 require 'logger'
 require 'git'
 
-module SpecistentClient # < EventMachine::Connection
+module SpecistentClient
   
   attr_accessor :files, :branch, :remote
+  attr_reader   :connected
+  
+  def initialize()
+    @connected = true
+  end
 
   def start_spec 
     return puts "NO files" if files.empty?
@@ -13,12 +18,12 @@ module SpecistentClient # < EventMachine::Connection
   end
 
   def receive_data(data)
-   print data
-   STDOUT.flush
+    print data
+    STDOUT.flush
   end
 
   def unbind
-   puts "A connection has terminated"
+    @connected = false
   end
 
 end
