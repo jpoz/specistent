@@ -42,7 +42,7 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
       send_data(@workers)
     when /run\s(\w*)\/(\w*)\s(.*)/
       @g = Git.open(Dir.pwd)
-      @g.pull($1, "#{$1}/#{$2}", "#{$1} pull")
+      puts @g.pull($1, "#{$1}/#{$2}", "#{$1} pull")
       @files = $3.split(' ')
       run_enviroments
     else
@@ -62,7 +62,7 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
     split_files
     @workers.times do |i|
       test_env_number = i < 1 ? nil : i
-      system("RAILS_ENV=test TEST_ENV_NUMBER=#{test_env_number} rake db:migrate") if @migrate
+      puts system("RAILS_ENV=test TEST_ENV_NUMBER=#{test_env_number} rake db:migrate") if @migrate
       EM.popen("/bin/sh -c 'TEST_ENV_NUMBER=#{test_env_number} spec #{@worker_files[i].join(' ')}'", SpecProcess, self)
       @running_workers += 1
     end
@@ -71,7 +71,7 @@ class SpecistentServer < EM::Protocols::LineAndTextProtocol
   def split_files
     @workers.times { @worker_files << [] }
     @files.each_with_index do |f, i|
-      worker_index = (i % @workers.size)
+      worker_index = (i % @workers)
       @worker_files[worker_index] << f
     end
   end
